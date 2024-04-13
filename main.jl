@@ -9,6 +9,9 @@ function wave_step!(y, y_last, k)
     end
 end
 
+function qualquer()
+end
+
 l = 100
 k = 1
 num_steps = 200

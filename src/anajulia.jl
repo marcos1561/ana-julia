@@ -7,28 +7,110 @@ struct Wave
     y_last::Vector{Float32}
     l::Int
 
-    Wave(y) = new(y, copy(y), length(y)) 
+    Wave(y) = new(copy(y), copy(y), length(y)) 
 end
 
-function wave_step!(wave, k)
+mutable struct IntPars
+    k::Float32
+    c::Float32
+    dx::Float32
+    dt::Float32
+
+    b::Float32
+    epsilon::Float32
+    n::Int
+
+    a::Vector{Float32}
+
+    IntPars(;k, c, dx, b, epsilon, l) = (
+        # dt = get_dt(dx, c);
+        dt = k * dx / c;
+        n = trunc(Int, l/dx);
+
+        d = 1 + b*dt;
+        
+        a = Vector{Float32}(undef, 4);
+        a[1] = (2 - 2*k^2 - 6*epsilon*(n*k)^2)/d;
+        a[2] = (-1 + b*dt)/d;
+        a[3] = k^2*(1+4*epsilon*n^2)/d;
+        a[4] = (epsilon*(n*k)^2)/d;
+
+        new(k, c, dx, dt, b, epsilon, n, a)
+    )
+end
+
+Base.copy(p::IntPars) = IntPars(
+    k=p.k, c=p.c, dx=p.dx, b=p.b, epsilon=p.epsilon, l=p.n*p.dx)
+
+
+function wave_step!(wave, pars::IntPars)
     y = wave.y
     y_last = wave.y_last
 
     l = length(y)
-    y_copy = copy(y)
+    
+    y_copy = Vector{Float32}(undef, l+2)
+    y_copy[2:end-1] .= copy(y)
+    y_copy[1] = -y[2]
+    y_copy[end] = -y[end-1]
+    
+    # println("Real")
+    a = pars.a
     for i in 2:l-1
-        y[i] = 2 * (1 - k^2) * y_copy[i] - y_last[i] + k^2 * (y_copy[i+1] + y_copy[i-1])
+        ci = i+1
+
+        term1 = a[1] * y_copy[ci] + a[2] * y_last[i] 
+        term2 = a[3] * (y_copy[ci+1] + y_copy[ci-1])
+        term3 = a[4] * (y_copy[ci+2] + y_copy[ci-2])
+        
+        # println("$(i): $(term1) | $(term2) | $(term3)")
+        y[i] = term1 + term2 + term3
+        
+        y_last[i] = y_copy[ci]
+    end
+    
+    # k = pars.k
+    # y_copy = copy(y)
+    # for i in 2:l-1
+    #     y[i] = 2 * (1 - k^2) * y_copy[i] - y_last[i] + k^2 * (y_copy[i+1] + y_copy[i-1])
+    #     y_last[i] = y_copy[i]
+    # end
+end
+
+function wave_step_ideal!(wave, pars::IntPars)
+    y = wave.y
+    y_last = wave.y_last
+    
+    l = length(y)
+    
+    k = pars.k
+    y_copy = copy(y)
+    # println("Ideal")
+    for i in 2:l-1
+        # y[i] = 2 * (1 - k^2) * y_copy[i] - y_last[i] + k^2 * (y_copy[i+1] + y_copy[i-1])
+        
+        term1 = 2 * (1 - k^2) * y_copy[i] - y_last[i]
+        term2 = k^2 * (y_copy[i+1] + y_copy[i-1])
+        
+        # println("$(i): $(term1) | $(term2)")
+        
+        y[i] = term1 + term2
+    
         y_last[i] = y_copy[i]
     end
 end
 
 function get_speed(k, dt)
-    return k / dt    
+    return k / dt     
+end
+
+function get_dt(dx, speed)
+    return (speed * 1/dx)^-1
 end
 
 function watch_point(wave, xo, k, dt, num_periods=1)
     speed = get_speed(k, dt)
-    tf =  wave.l / speed
+    tf = wave.l / speed
     
     watch_idx = Int(wave.l * xo)
     time = Vector{Float32}(0:dt:tf*num_periods)

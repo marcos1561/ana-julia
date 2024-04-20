@@ -54,7 +54,6 @@ function wave_step!(wave, pars::IntPars)
     y_copy[1] = -y[2]
     y_copy[end] = -y[end-1]
     
-    # println("Real")
     a = pars.a
     for i in 2:l-1
         ci = i+1
@@ -63,18 +62,10 @@ function wave_step!(wave, pars::IntPars)
         term2 = a[3] * (y_copy[ci+1] + y_copy[ci-1])
         term3 = a[4] * (y_copy[ci+2] + y_copy[ci-2])
         
-        # println("$(i): $(term1) | $(term2) | $(term3)")
         y[i] = term1 + term2 + term3
         
         y_last[i] = y_copy[ci]
     end
-    
-    # k = pars.k
-    # y_copy = copy(y)
-    # for i in 2:l-1
-    #     y[i] = 2 * (1 - k^2) * y_copy[i] - y_last[i] + k^2 * (y_copy[i+1] + y_copy[i-1])
-    #     y_last[i] = y_copy[i]
-    # end
 end
 
 function wave_step_ideal!(wave, pars::IntPars)
@@ -108,16 +99,16 @@ function get_dt(dx, speed)
     return (speed * 1/dx)^-1
 end
 
-function watch_point(wave, xo, k, dt, num_periods=1)
-    speed = get_speed(k, dt)
-    tf = wave.l / speed
+function watch_point(wave, xo, int_pars::IntPars, num_periods=1)
+    tf = wave.l * int_pars.dx  / int_pars.c
     
-    watch_idx = Int(wave.l * xo)
-    time = Vector{Float32}(0:dt:tf*num_periods)
+    watch_idx = trunc(Int, (wave.l - 1) * xo + 1)
+    println("watch_idx: $(watch_idx)")
+    time = Vector{Float32}(0:int_pars.dt:tf*num_periods)
     y_data = Vector{Float32}(undef, length(time))
     for i in 1:length(time)
         y_data[i] = wave.y[watch_idx]
-        wave_step!(wave, k)
+        wave_step!(wave, int_pars)
     end
 
     return time, y_data

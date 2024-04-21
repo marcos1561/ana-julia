@@ -3,15 +3,15 @@ using Plots
 include("anajulia.jl")
 import .anajulia
 
-file_name = "anim.gif"
+file_name = "gaussian_package_ana_julia.gif"
 
 # Configurações da corda
 int_pars = anajulia.IntPars(
     k  = 1/4,
-    c  = 880,
+    c  = 680,
     dx = 0.01,
     b  = 5,
-    epsilon = 1e-9*1,
+    epsilon = 1e-8*1,
     l = 1,
 )
 
@@ -21,16 +21,16 @@ sigma = 0.01
 height = 1
 
 # Configurações da animação
-fps = 30
-time = 17
+fps = 26
+time = 14
 sim_time = 0.02
 
 
 x = Vector{Float32}(0:int_pars.n-1)
-# y = anajulia.init_state.gaussian_package(
-#     x, center, sigma)
-y = anajulia.init_state.pluck_string(
-    x, center, height)
+y = anajulia.init_state.gaussian_package(
+    x, center, sigma)
+# y = anajulia.init_state.pluck_string(
+#     x, center, height)
 
 
 num_steps = trunc(Int, sim_time / int_pars.dt)

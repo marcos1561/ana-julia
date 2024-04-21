@@ -9,7 +9,7 @@ int_pars = anajulia.IntPars(
     c  = 880,
     dx = 0.01,
     b  = 5,
-    epsilon = 1e-9*1,
+    epsilon = 1e-8*1,
     l = 1,
 )
 
@@ -23,7 +23,7 @@ point_pos = 0.05
 time = 1
 
 # Estado inicial
-x = Vector{Float32}(0:l-1)
+x = Vector{Float32}(0:int_pars.n-1)
 y = anajulia.init_state.pluck_string(
     x, center, height)
 # y = anajulia.init_state.gaussian_package(
@@ -43,7 +43,7 @@ print(time[end])
 using WAV
 fs = trunc(Int, 1/int_pars.dt)
 wavplay(waveform, fs)
-wavwrite(waveform, fs, "sound/la_note_0_2.wav")
+# wavwrite(waveform, fs, "sound/la_note_0_2.wav")
 
 # ==
 # Grapfico do Sinal
@@ -72,6 +72,7 @@ for n in 1:num_harms
     freq = harmonic * n 
     plot!(p_power, [freq, freq], [0, 0.5], linestyle=:dash, c="black")
 end
+savefig("animacoes/la_power_high_stiff_ana_julia.png")
 display(p_power)
 
 # ==
